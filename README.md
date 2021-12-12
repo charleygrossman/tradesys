@@ -1,2 +1,2 @@
 # tradesys
-Simple C distributed system to learn the language.
+C application to learn the language.
