@@ -4,10 +4,19 @@ project(tradesys C)
 
 add_compile_options(-std=gnu17 -W -Wall -Werror)
 
-link_libraries(-lrt)
+link_libraries(-lrt -pthread)
+
+set(SRC ${PROJECT_SOURCE_DIR}/src)
+
+include_directories(
+    ${SRC}
+    ${SRC}/feed
+    ${SRC}/sig
+)
 
 add_executable(
     ${PROJECT_NAME}
-    src/main.c
-    src/sig/clock.c
+    ${SRC}/main.c
+    ${SRC}/feed/feed.c
+    ${SRC}/sig/clock.c
 )
