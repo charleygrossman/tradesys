@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <pthread.h>
+#include <time.h>
+#include "feed/rate.h"
 #include "sig/clock.h"
 
 volatile sig_atomic_t feedFlag;
@@ -19,9 +21,11 @@ int feed(void) {
     if (pthread_join(feedStartID, &feedStartRetval) != 0 || (intptr_t)feedStartRetval != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
+    srand(time(NULL));
     while (true) {
         if (feedFlag) {
-            printf("Hello, async world\n");
+            struct Rate r = genRate();
+            printf("symbol=%s price=%ld quantity=%ld\n", r.symbol, r.price, r.quantity);
             feedFlag = false;
         }
     }

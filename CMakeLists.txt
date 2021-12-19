@@ -18,5 +18,6 @@ add_executable(
     ${PROJECT_NAME}
     ${SRC}/main.c
     ${SRC}/feed/feed.c
+    ${SRC}/feed/rate.c
     ${SRC}/sig/clock.c
 )
