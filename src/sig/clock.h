@@ -13,6 +13,7 @@ struct SigClock {
     // frequency represents the time interval 
     // between each clock tick, in seconds.
     uint64_t frequency;
+    // TODO
     // limit represents the number of ticks
     // that the clock should take.
     uint64_t limit;

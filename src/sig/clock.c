@@ -4,6 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #include <time.h>
+#include <stdio.h>
 
 struct SigClock {
     uint64_t frequency;
@@ -20,8 +21,10 @@ void SigClock_new(struct SigClock *sigClock, uint64_t freq, uint64_t limit, void
 }
 
 int SigClock_start(struct SigClock *sigClock) {
-    sigemptyset(&sigClock->sa.sa_mask);
-    if (sigaction(SIGRTMIN, &sigClock->sa, NULL) == -1) {
+    if (sigemptyset(&sigClock->sa.sa_mask) != 0) {
+        return EXIT_FAILURE;
+    }
+    if (sigaction(SIGRTMIN, &sigClock->sa, NULL) != 0) {
         return EXIT_FAILURE;
     }
 
@@ -30,7 +33,7 @@ int SigClock_start(struct SigClock *sigClock) {
     sigEvt.sigev_notify = SIGEV_SIGNAL;
     sigEvt.sigev_signo = SIGRTMIN;
     sigEvt.sigev_value.sival_ptr = &sigClock->timerID;
-    if (timer_create(CLOCK_REALTIME, &sigEvt, &sigClock->timerID) == -1) {
+    if (timer_create(CLOCK_REALTIME, &sigEvt, &sigClock->timerID) != 0) {
         return EXIT_FAILURE;
     }
 
@@ -38,10 +41,8 @@ int SigClock_start(struct SigClock *sigClock) {
     memset(&timerSpec, 0, sizeof(struct itimerspec));
     timerSpec.it_interval.tv_sec = sigClock->frequency;
     timerSpec.it_value.tv_sec = sigClock->frequency;
-    for (uint64_t i = 0; i < sigClock->limit; i++) {
-        if (timer_settime(sigClock->timerID, 0, &timerSpec, NULL) == -1) {
-            return EXIT_FAILURE;
-        }  
+    if (timer_settime(sigClock->timerID, 0, &timerSpec, NULL) != 0) {
+        return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
 }
