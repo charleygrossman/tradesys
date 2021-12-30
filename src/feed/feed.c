@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <signal.h>
 #include <pthread.h>
 #include <time.h>
@@ -12,7 +13,18 @@ volatile sig_atomic_t feedFlag;
 void *feedStart(void *);
 void handler(int);
 
-int feed(void) {
+struct Feed {
+    struct RateConfig *rateConfigs;
+    size_t rateConfigsSize;
+};
+
+int Feed_new(struct Feed *feed, const char *rateFilepath) {
+    memset(feed, 0, sizeof(struct Feed));
+    feed->rateConfigs = NULL;
+    return parseRateConfigs(rateFilepath, &feed->rateConfigs, &feed->rateConfigsSize);
+}
+
+int Feed_start(struct Feed *feed) {
     pthread_t feedStartID;
     void *feedStartRetval;
     if (pthread_create(&feedStartID, NULL, feedStart, NULL) != 0) {
@@ -24,8 +36,10 @@ int feed(void) {
     srand(time(NULL));
     while (true) {
         if (feedFlag) {
-            struct Rate r = genRate();
-            printf("symbol=%s price=%ld quantity=%ld\n", r.symbol, r.price, r.quantity);
+            for (size_t i = 0; i < feed->rateConfigsSize; i++) {
+                struct Rate r = randRate(feed->rateConfigs[i]);
+                printf("symbol=%s price=%ld quantity=%ld\n", r.symbol, r.price, r.quantity);
+            }
             feedFlag = false;
         }
     }
