@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <time.h>
-#include "feed/rate.h"
+#include "feed/quote.h"
 #include "sig/clock.h"
 
 volatile sig_atomic_t feedFlag;
@@ -14,14 +14,14 @@ void *feedStart(void *);
 void handler(int);
 
 struct Feed {
-    struct RateConfig *rateConfigs;
-    size_t rateConfigsSize;
+    struct QuoteConfig *quoteConfigs;
+    size_t quoteConfigsSize;
 };
 
-int Feed_new(struct Feed *feed, const char *rateFilepath) {
+int Feed_new(struct Feed *feed, const char *quoteFilepath) {
     memset(feed, 0, sizeof(struct Feed));
-    feed->rateConfigs = NULL;
-    return parseRateConfigs(rateFilepath, &feed->rateConfigs, &feed->rateConfigsSize);
+    feed->quoteConfigs = NULL;
+    return parseQuoteConfigs(quoteFilepath, &feed->quoteConfigs, &feed->quoteConfigsSize);
 }
 
 int Feed_start(struct Feed *feed) {
@@ -36,9 +36,11 @@ int Feed_start(struct Feed *feed) {
     srand(time(NULL));
     while (true) {
         if (feedFlag) {
-            for (size_t i = 0; i < feed->rateConfigsSize; i++) {
-                struct Rate r = randRate(feed->rateConfigs[i]);
-                printf("symbol=%s price=%ld quantity=%ld\n", r.symbol, r.price, r.quantity);
+            for (size_t i = 0; i < feed->quoteConfigsSize; i++) {
+                struct Quote q = randQuote(feed->quoteConfigs[i]);
+                printf("symbol=%s ask price=%ld ask quantity=%ld bid price=%ld bid quantity=%ld\n",
+                    q.symbol, q.askPrice, q.askQuantity, q.bidPrice, q.bidQuantity
+                );
             }
             feedFlag = false;
         }
