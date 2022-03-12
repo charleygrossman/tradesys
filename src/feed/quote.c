@@ -10,14 +10,14 @@
 // TODO: Support for decimal values.
 struct Quote {
     char symbol[QUOTE_SYMBOL_SIZE];
-    int64_t askPrice, askQuantity;
-    int64_t bidPrice, bidQuantity;
+    uint64_t askPrice, askQuantity;
+    uint64_t bidPrice, bidQuantity;
 };
 
 struct QuoteConfig {
     char symbol[QUOTE_SYMBOL_SIZE];
-    int64_t minPrice, maxPrice;
-    int64_t minQuantity, maxQuantity; 
+    uint64_t minPrice, maxPrice;
+    uint64_t minQuantity, maxQuantity; 
 };
 
 struct Quote randQuote(struct QuoteConfig cfg) {
@@ -47,7 +47,7 @@ int parseQuoteConfigs(const char *filepath, struct QuoteConfig **quoteConfigs, s
     size_t size = 0;
     struct QuoteConfig q;
     do {
-        int n = fscanf(f, "%3s,%ld,%ld,%ld,%ld", q.symbol, &q.minPrice, &q.maxPrice, &q.minQuantity, &q.maxQuantity);
+        int n = fscanf(f, "%3s,%lu,%lu,%lu,%lu", q.symbol, &q.minPrice, &q.maxPrice, &q.minQuantity, &q.maxQuantity);
         if (n == 5) {
             size++;
         } else if (n == EOF) {
@@ -74,7 +74,7 @@ int parseQuoteConfigs(const char *filepath, struct QuoteConfig **quoteConfigs, s
     *quoteConfigs = v;
     for (size_t i = 0; i < size; i++) {
         struct QuoteConfig q;
-        if (fscanf(f, "%3s,%ld,%ld,%ld,%ld", q.symbol, &q.minPrice, &q.maxPrice, &q.minQuantity, &q.maxQuantity) != 5) {
+        if (fscanf(f, "%3s,%lu,%lu,%lu,%lu", q.symbol, &q.minPrice, &q.maxPrice, &q.minQuantity, &q.maxQuantity) != 5) {
             goto FAIL_CLOSE_FREE;
         }
         (*quoteConfigs)[i] = q;
@@ -90,4 +90,62 @@ int parseQuoteConfigs(const char *filepath, struct QuoteConfig **quoteConfigs, s
         *quoteConfigs = NULL;
         fclose(f);
         return EXIT_FAILURE;
+}
+
+void marshalString(unsigned char *data, char *v, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        data[i] = v[i];
+    }
+}
+
+void unmarshalString(char *v, unsigned char *data, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        v[i] = data[i];
+    }
+}
+
+void marshalUint64(unsigned char *data, uint64_t v) {
+    *data++ = v>>56;
+    *data++ = v>>48;
+    *data++ = v>>40;
+    *data++ = v>>32;
+    *data++ = v>>24;
+    *data++ = v>>16;
+    *data++ = v>>8;
+    *data++ = v;
+}
+
+uint64_t unmarshalUint64(unsigned char *data) {
+    return ((uint64_t) data[0]<<56) |
+        ((uint64_t) data[1]<<48) |
+        ((uint64_t) data[2]<<40) |
+        ((uint64_t) data[3]<<32) |
+        ((uint64_t) data[4]<<24) |
+        ((uint64_t) data[5]<<16) |
+        ((uint64_t) data[6]<<8) |
+        data[7];
+}
+
+void marshalQuote(unsigned char *data, struct Quote *quote) {
+    marshalString(data, quote->symbol, QUOTE_SYMBOL_SIZE);
+    data += QUOTE_SYMBOL_SIZE;
+    marshalUint64(data, quote->askPrice);
+    data += 8;
+    marshalUint64(data, quote->askQuantity);
+    data += 8;
+    marshalUint64(data, quote->bidPrice);
+    data += 8;
+    marshalUint64(data, quote->bidQuantity);
+}
+
+void unmarshalQuote(struct Quote *quote, unsigned char *data) {
+    unmarshalString(quote->symbol, data, QUOTE_SYMBOL_SIZE);
+    data += QUOTE_SYMBOL_SIZE;
+    quote->askPrice = unmarshalUint64(data);
+    data += 8;
+    quote->askQuantity = unmarshalUint64(data);
+    data += 8;
+    quote->bidPrice = unmarshalUint64(data);
+    data += 8;
+    quote->bidQuantity = unmarshalUint64(data);
 }
