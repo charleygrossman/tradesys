@@ -6,12 +6,13 @@
 #include <pthread.h>
 #include <time.h>
 #include "feed/quote.h"
+#include "feed/server.h"
 #include "sig/clock.h"
 
 volatile sig_atomic_t feedFlag;
 
 void *feedStart(void *);
-void handler(int);
+void feedHandler(int);
 
 struct Feed {
     struct QuoteConfig *quoteConfigs;
@@ -25,6 +26,10 @@ int Feed_new(struct Feed *feed, const char *quoteFilepath) {
 }
 
 int Feed_start(struct Feed *feed) {
+    struct Server server;
+    if (Server_start(&server, "50000") != EXIT_SUCCESS) {
+        return EXIT_FAILURE;
+    }
     pthread_t feedStartID;
     void *feedStartRetval;
     if (pthread_create(&feedStartID, NULL, feedStart, NULL) != 0) {
@@ -37,10 +42,9 @@ int Feed_start(struct Feed *feed) {
     while (true) {
         if (feedFlag) {
             for (size_t i = 0; i < feed->quoteConfigsSize; i++) {
-                struct Quote q = randQuote(feed->quoteConfigs[i]);
-                printf("symbol=%s ask price=%ld ask quantity=%ld bid price=%ld bid quantity=%ld\n",
-                    q.symbol, q.askPrice, q.askQuantity, q.bidPrice, q.bidQuantity
-                );
+                if (Server_sendQuote(&server, randQuote(feed->quoteConfigs[i])) != EXIT_SUCCESS) {
+                    return EXIT_FAILURE;
+                }
             }
             feedFlag = false;
         }
@@ -50,10 +54,10 @@ int Feed_start(struct Feed *feed) {
 
 void *feedStart(__attribute__((unused)) void *data) {
     struct SigClock s;
-    SigClock_new(&s, 1, 1, handler);
+    SigClock_new(&s, 1, 1, feedHandler);
     return (void *)(intptr_t)SigClock_start(&s);
 }
 
-void handler(__attribute__((unused)) int sig) {
+void feedHandler(__attribute__((unused)) int sig) {
     feedFlag = true;
 }

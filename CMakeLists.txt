@@ -20,6 +20,8 @@ add_executable(
     ${SRC}/main.c
     ${SRC}/feed/feed.c
     ${SRC}/feed/quote.c
+    ${SRC}/feed/server.c
     ${SRC}/sig/clock.c
     ${SRC}/strategy/strategy.c
+    ${SRC}/strategy/client.c
 )
