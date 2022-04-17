@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "feed/feed.h"
-#include "strategy/strategy.h"
 
-// TODO: Separate builds for feed and strategy.
 int main(void) {
     char *fpath = getenv("QUOTE_FILEPATH");
     if (fpath == NULL) {
@@ -15,8 +13,4 @@ int main(void) {
         return EXIT_FAILURE;
     }
     return Feed_start(&feed);
-    
-    // struct Strategy strat;
-    // Strategy_new(&strat);
-    // return Strategy_start(&strat);
 }

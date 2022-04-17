@@ -10,22 +10,29 @@
 #include "strategy/client.h"
 #include "sig/clock.h"
 
-struct Strategy {
-    double liquidity;
-    double volatility;
-};
-
 volatile sig_atomic_t stratFlag;
 
 void *strategyStart(void *);
 void strategyHandler(int);
 
+struct Strategy {
+    double liquidity;
+    double volatility;
+};
+
 void Strategy_new(struct Strategy *strat) {
     memset(strat, 0, sizeof(struct Strategy));
 }
 
-// TODO: Process quotes and calculate estimates.
-int Strategy_start(struct Strategy __attribute__((unused)) *strat) {
+void Strategy_estimateLiquidity(struct Strategy *strat, struct Quote quote, double a) {
+    strat->liquidity = (1-a)*(quote.askQuantity+quote.bidQuantity) + a*strat->liquidity;   
+}
+
+void Strategy_estimateVolatility(struct Strategy *strat, struct Quote quote, double a) {
+    strat->volatility = (1-a)*pow(quote.askQuantity+quote.bidQuantity-strat->liquidity, 2) + a*strat->volatility;
+}
+
+int Strategy_start(struct Strategy *strat) {
     struct Client client;
     if (Client_start(&client, "50000") != EXIT_SUCCESS) {
         return EXIT_FAILURE;
@@ -41,9 +48,16 @@ int Strategy_start(struct Strategy __attribute__((unused)) *strat) {
     srand(time(NULL));
     while (true) {
         if (stratFlag) {
-            if (Client_recvQuote(&client) != EXIT_SUCCESS) {
+            struct Quote q;
+            if (Client_recvQuote(&client, &q) != EXIT_SUCCESS) {
                 return EXIT_FAILURE;
             }
+            printf("received quote: symbol=%s ask price=%lu ask quantity=%lu bid price=%lu bid quantity=%lu\n",
+                q.symbol, q.askPrice, q.askQuantity, q.bidPrice, q.bidQuantity
+            );
+            Strategy_estimateLiquidity(strat, q, 1.0);
+            Strategy_estimateVolatility(strat, q, 1.0);
+            printf("strategy updated: liquidity=%f volatility=%f\n", strat->liquidity, strat->volatility);
             stratFlag = false;
         }
     }
@@ -58,12 +72,4 @@ void *strategyStart(__attribute__((unused)) void *data) {
 
 void strategyHandler(__attribute__((unused)) int sig) {
     stratFlag = true;
-}
-
-void Strategy_estimateLiquidity(struct Strategy *strat, struct Quote quote, double a) {
-    strat->liquidity = (1-a)*(quote.askQuantity+quote.bidQuantity) + a*strat->liquidity;   
-}
-
-void Strategy_estimateVolatility(struct Strategy *strat, struct Quote quote, double a) {
-    strat->volatility = (1-a)*pow(quote.askQuantity+quote.bidQuantity-strat->liquidity, 2) + a*strat->volatility;
 }

@@ -16,12 +16,19 @@ include_directories(
 )
 
 add_executable(
-    ${PROJECT_NAME}
-    ${SRC}/main.c
+    feed
+    ${SRC}/feed/main.c
     ${SRC}/feed/feed.c
     ${SRC}/feed/quote.c
     ${SRC}/feed/server.c
     ${SRC}/sig/clock.c
+)
+
+add_executable(
+    strategy
+    ${SRC}/strategy/main.c
     ${SRC}/strategy/strategy.c
     ${SRC}/strategy/client.c
+    ${SRC}/sig/clock.c
+    ${SRC}/feed/quote.c
 )

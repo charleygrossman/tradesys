@@ -13,7 +13,6 @@ struct Client {
     int fd;
 };
 
-// TODO: Cleanup on failure.
 int Client_start(struct Client *client, char *port) {
     memset(client, 0, sizeof(struct Client));
     client->port = port;
@@ -42,17 +41,13 @@ int Client_start(struct Client *client, char *port) {
     return EXIT_SUCCESS;
 }
 
-int Client_recvQuote(struct Client *client) {
+int Client_recvQuote(struct Client *client, struct Quote *quote) {
     size_t size = sizeof(struct Quote);
     unsigned char data[size];
     if (recvfrom(client->fd, data, size-1, 0, client->info[0]->ai_addr, &client->info[0]->ai_addrlen) == -1) {
         return EXIT_FAILURE;
     }
-    struct Quote q;
-    memset(&q, 0, sizeof(struct Quote));
-    unmarshalQuote(&q, data);
-    printf("received quote: symbol=%s ask price=%lu ask quantity=%lu bid price=%lu bid quantity=%lu\n",
-        q.symbol, q.askPrice, q.askQuantity, q.bidPrice, q.bidQuantity
-    );
+    memset(quote, 0, sizeof(struct Quote));
+    unmarshalQuote(quote, data);
     return EXIT_SUCCESS;
 }

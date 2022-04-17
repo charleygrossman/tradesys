@@ -12,7 +12,6 @@ struct Server {
     int fd;
 };
 
-// TODO: Cleanup on failure.
 int Server_start(struct Server *server, char *port) {
     memset(server, 0, sizeof(struct Server));
     server->port = port;
