@@ -34,7 +34,7 @@ void Strategy_estimateVolatility(struct Strategy *strat, struct Quote quote, dou
 
 int Strategy_start(struct Strategy *strat) {
     struct Client client;
-    if (Client_start(&client, "50000") != EXIT_SUCCESS) {
+    if (Client_start(&client, NULL, "50000") != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
     pthread_t stratStartID;
@@ -55,8 +55,8 @@ int Strategy_start(struct Strategy *strat) {
             printf("received quote: symbol=%s ask price=%lu ask quantity=%lu bid price=%lu bid quantity=%lu\n",
                 q.symbol, q.askPrice, q.askQuantity, q.bidPrice, q.bidQuantity
             );
-            Strategy_estimateLiquidity(strat, q, 1.0);
-            Strategy_estimateVolatility(strat, q, 1.0);
+            Strategy_estimateLiquidity(strat, q, 0.5);
+            Strategy_estimateVolatility(strat, q, 0.5);
             printf("strategy updated: liquidity=%f volatility=%f\n", strat->liquidity, strat->volatility);
             stratFlag = false;
         }

@@ -27,7 +27,7 @@ int Feed_new(struct Feed *feed, const char *quoteFilepath) {
 
 int Feed_start(struct Feed *feed) {
     struct Server server;
-    if (Server_start(&server, "50000") != EXIT_SUCCESS) {
+    if (Server_start(&server, NULL, "50000") != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
     pthread_t feedStartID;

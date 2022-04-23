@@ -7,29 +7,33 @@
 #include "feed/quote.h"
 
 struct Server {
-    char *port;
-    struct addrinfo **info;
+    const char *address, *port;
+    struct addrinfo *info;
     int fd;
 };
 
-int Server_start(struct Server *server, char *port) {
+int Server_start(struct Server *server, const char *address, const char *port) {
     memset(server, 0, sizeof(struct Server));
-    server->port = port;
+
     struct addrinfo hints;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
     hints.ai_flags = AI_PASSIVE;
     hints.ai_socktype = SOCK_DGRAM;
+
     struct addrinfo *info;
-    server->info = &info;
-    if (getaddrinfo(NULL, server->port, &hints, server->info) != 0) {
+    if (getaddrinfo(address, port, &hints, &info) != 0) {
         return EXIT_FAILURE;
     }
-    int fd = socket(server->info[0]->ai_family, server->info[0]->ai_socktype, server->info[0]->ai_protocol);
+    int fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
     if (fd == -1) {
         return EXIT_FAILURE;
     }
+    server->address = address;
+    server->port = port;
+    server->info = info;
     server->fd = fd;
+
     return EXIT_SUCCESS;
 }
 
@@ -40,7 +44,7 @@ int Server_sendQuote(struct Server *server, struct Quote quote) {
         return EXIT_FAILURE;
     }
     marshalQuote(data, &quote);
-    if (sendto(server->fd, data, sizeof(struct Quote), 0, server->info[0]->ai_addr, server->info[0]->ai_addrlen) == -1) {
+    if (sendto(server->fd, data, sizeof(struct Quote), 0, server->info->ai_addr, server->info->ai_addrlen) == -1) {
         free(data);
         return EXIT_FAILURE; 
     }
